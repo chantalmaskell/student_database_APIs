@@ -1,15 +1,9 @@
 const express = require('express')
 const app = express()
 const port = 3000
+const jwt = require('jsonwebtoken');
 
 const mysql = require('mysql2/promise');
-
-class ConnectionError extends Error {
-  constructor(args){
-      super(args);
-      this.name = "ConnectionError"
-  }
-}
 
 async function connectToDb() {
   try {
@@ -22,7 +16,7 @@ async function connectToDb() {
 
     return connection;
   } catch (err) {
-    throw new ConnectionError("Unable to connect to DB")
+    throw new Error("Unable to connect to DB")
   }
 }
 async function selectAllUsers(con) {
@@ -35,11 +29,36 @@ async function selectAllUsers(con) {
   }
 }
 
+function isAuthenticated(req, res, next) {
+  if (typeof req.headers.authorization !== "undefined") {
+      let token = req.headers.authorization.split(" ")[1];
+      let privateKey = "MySuperSecretPassPhrase123";
+
+      jwt.verify(token, privateKey, { algorithm: "HS256" }, (err, user) => {
+          
+          if (err) {  
+              res.status(500).json({ error: "Not Authorized" });
+          }
+          else {
+            return next();
+          }
+      });
+  } else {
+      res.status(500).json({ error: "Not Authorized" });
+  }
+}
+
+app.get('/jwt', (req, res) => {
+  let token = jwt.sign({ "auth": "project" }, "MySuperSecretPassPhrase", { algorithm: 'HS256'});
+  res.send(token);
+})
+
+
 app.get('/', async (req, res) => {
   res.send("Welcome")
 })
 
-app.get('/users', async (req, res) => {
+app.get('/users', isAuthenticated, async (req, res) => {
 
   try {
     const connection = await connectToDb();
