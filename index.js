@@ -1,55 +1,55 @@
 const express = require('express')
 const app = express()
 
+// Handle JSON and Form data inside the request body
+app.use(express.urlencoded({extended: true}));
+app.use(express.json())
+
+//Loads environment variables from a .env
 const dotenv = require('dotenv');
 dotenv.config({ path: './config/config.env' });
 
-const mysql = require('mysql2/promise');
+const jwt = require('jsonwebtoken');
+
+const mysql = require('mysql2');
 
 const { isAuthenticated } = require('./auth/auth');
 
-async function connectToDb() {
+//Connect to Database
+const connection = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE
+});
 
-  try {
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE
-    });
+// Handle the database connection error 
+connection.on('error', function(err) {
+  console.log("[Database error] : ",err);
+  process.exit(1);
+});
 
-    return connection;
-  } catch (err) {
-    throw new Error("Unable to connect to DB")
-  }
-}
-
-async function selectAllUsers(con) {
-
-  try {
-    const [rows, fields] = await con.execute('SELECT * FROM users');
-    return rows;
-  } catch (error) {
-    throw error;
-  }
-}
-
+//Generate JWT token for API Calls
 app.get('/jwt', (req, res) => {
-  let token = jwt.sign({ "auth": "project" }, "MySuperSecretPassPhrase", { algorithm: 'HS256'});
+  let token = jwt.sign({ "auth": "project" }, process.env.PRIVATE_KEY, { algorithm: process.env.ALGORITHM});
   res.send(token);
 })
 
-
+//Home page
 app.get('/', async (req, res) => {
   res.send("Welcome")
 })
 
-app.get('/users', isAuthenticated, async (req, res) => {
+//Admin page
+app.post('/admin', isAuthenticated, async (req, res) => {
+
+  const userID = req.body.userID;
+  const course_status = req.body.status;
 
   try {
-    const connection = await connectToDb();
-    const data = await selectAllUsers(connection);
-    res.json(data);
+    connection.query('SELECT * FROM users WHERE userID = ' + userID , function(err, results, fields) {
+      res.json(results);
+    });
   }
   catch (err) {
     const jsonContent = {error: err.message, name: err.name}
@@ -57,6 +57,7 @@ app.get('/users', isAuthenticated, async (req, res) => {
   }
 })
 
+//Start the server
 app.listen(process.env.PORT, () => {
-  console.log(`Example app listening on port ${process.env.PORT}`)
+  console.log(`University app listening on port ${process.env.PORT}`)
 })
