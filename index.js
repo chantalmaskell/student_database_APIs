@@ -162,13 +162,12 @@ app.post('/admin/course/assign', isAuthenticated, async (req, res) => {
 app.get('/courses', async (req, res) => {
   try {
     // Prepare SQL statement to get course information with teacher name
-    let sql = `
-      SELECT courses.CourseID, courses.Title, CONCAT(users.FirstName, ' ', users.LastName) AS TeacherName
-      FROM courses
-      LEFT JOIN users ON courses.TeacherID = users.UserID
-      WHERE courses.isAvailable = 1
-      ORDER BY courses.Title ASC
-    `;
+    let sql = ` SELECT courses.Title AS CourseTitle, CONCAT(users.Name, ' (', roles.Role, ')') AS TeacherName
+    FROM courses
+    INNER JOIN users ON courses.TeacherID = users.UserID
+    INNER JOIN roles ON users.RoleID = roles.RoleID
+    WHERE courses.isAvailable = 1 AND roles.Role = 'Teacher';
+    `
     const [courses, _] = await mainConnection.execute(sql);
     res.json(courses);
   } catch (err) {
