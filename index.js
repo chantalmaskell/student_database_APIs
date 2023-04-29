@@ -156,6 +156,29 @@ app.post('/admin/course/assign', isAuthenticated, async (req, res) => {
   }
 })
 
+// Students can browse and list all the available courses and see the course title and course teacher’s name. 
+
+// Students browse available courses
+app.get('/courses', async (req, res) => {
+  try {
+    // Prepare SQL statement to get course information with teacher name
+    let sql = `
+      SELECT courses.CourseID, courses.Title, CONCAT(users.FirstName, ' ', users.LastName) AS TeacherName
+      FROM courses
+      LEFT JOIN users ON courses.TeacherID = users.UserID
+      WHERE courses.isAvailable = 1
+      ORDER BY courses.Title ASC
+    `;
+    const [courses, _] = await mainConnection.execute(sql);
+    res.json(courses);
+  } catch (err) {
+    const jsonContent = {error: err.message, name: err.name};
+    res.status(500).json(jsonContent);
+  }
+});
+
+
+
 //Start the server
 app.listen(process.env.PORT, () => {
   console.log(`University app listening on port ${process.env.PORT}`)
