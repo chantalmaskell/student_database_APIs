@@ -158,7 +158,6 @@ app.post('/admin/course/assign', isAuthenticated, async (req, res) => {
 
 // Students can browse and list all the available courses and see the course title and course teacher’s name. 
 
-// Students browse available courses
 app.get('/courses', async (req, res) => {
   try {
     // Prepare SQL statement to get course information with teacher name
@@ -175,7 +174,6 @@ app.get('/courses', async (req, res) => {
     res.status(500).json(jsonContent);
   }
 });
-
 
 
 //Start the server
