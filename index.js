@@ -54,46 +54,43 @@ app.post('/admin/course/availability', isAuthenticated, async (req, res) => {
   const course_isAvailable = req.body.isAvailable;
 
   if (userID == null || course_isAvailable == null || courseID == null) {
-    res.json({ "error": "Invalid request" });
+    res.status(400).json({ "error": "Invalid request" });
   }
   else if (isNaN(courseID)) {
-    res.json({ "error": "Invalid input for course ID" });
+    res.status(400).json({ "error": "Invalid input for course ID" });
   }
   else if (isNaN(course_isAvailable)) {
-    res.json({ "error": "Invalid input for status" });
+    res.status(400).json({ "error": "Invalid input for status" });
   }
   else if (course_isAvailable > 1) {
-    res.json({ "error": "Invalid input for status" });
+    res.status(400).json({ "error": "Invalid input for status" });
   }
   else {
 
     try {
       //Prepare SQL statement. Prevent SQL injection
-      let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID'
-      const [userType, userColumn]  = await mainConnection.execute(sql, [userID]);
+      let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID AND r.Role = ?'
+      const [userType, _]  = await mainConnection.execute(sql, [userID, "Admin"]);
       if (userType.length == 0) {
-        res.json({ "error": "User not found" });
+        res.status(401).json({ "error": "Unauthorize access" });
       }
-      else if (userType[0].Role == "Admin") {
+      else {
 
         let sql = 'SELECT CourseID FROM courses WHERE CourseID = ?'
-        const [course, userColumn]  = await mainConnection.execute(sql, [courseID]);
+        const [course, _]  = await mainConnection.execute(sql, [courseID]);
         if (course.length == 0) {
-          res.json({ "error": "Invalid course ID" });
+          res.status(400).json({ "error": "Invalid course ID" });
         }
         else {
           let sql = 'UPDATE courses SET isAvailable = ? WHERE CourseID = ?'
           await mainConnection.execute(sql, [course_isAvailable, courseID]);
-          res.json({ "status": "success" });
+          res.status(200).json({ "status": "success" });
         }
-      }
-      else {
-        res.json({ "error": "Unauthorize access" });
       }
     }
     catch (err) {
       const jsonContent = {error: err.message, name: err.name}
-      res.json(jsonContent);
+      res.status(500).json(jsonContent);
     }
   }
 })
@@ -106,31 +103,28 @@ app.post('/admin/course/assign', isAuthenticated, async (req, res) => {
   const courses = req.body.courses;
 
   if (userID == null || teacherID == null || courses == null) {
-    res.json({ "error": "Invalid request" });
+    res.status(400).json({ "error": "Invalid request" });
   }
   else if (isNaN(teacherID)) {
-    res.json({ "error": "Invalid input for teacher ID" });
+    res.status(400).json({ "error": "Invalid input for teacher ID" });
   }
   else if (courses.length == 0) {
-    res.json({ "error": "Please select course/s  to assign to teacher" });
+    res.status(400).json({ "error": "Please select course/s  to assign to teacher" });
   }
   else {
 
     try {
-      let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID'
-      const [userType, userColumn]  = await mainConnection.execute(sql, [userID]);
+      let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID AND r.Role = ?'
+      const [userType, _]  = await mainConnection.execute(sql, [userID, "Admin"]);
       if (userType.length == 0) {
-        res.json({ "error": "User not found" });
+        res.status(401).json({ "error": "Unauthorize access" });
       }
-      else if (userType[0].Role == "Admin") {
+      else {
 
-        let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID'
-        const [teacher, userColumn]  = await mainConnection.execute(sql, [teacherID]);
+        let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID AND r.Role = ?'
+        const [teacher, _]  = await mainConnection.execute(sql, [teacherID, "Teacher"]);
         if (teacher.length == 0) {
-          res.json({ "error": "Invalid teacher ID" });
-        }
-        else if (teacher[0].Role != "Teacher") {
-          res.json({ "error": "Invalid teacher ID" });
+          res.status(400).json({ "error": "Invalid teacher ID" });
         }
         else {
           for (let i = 0; i < courses.length; i++) {
@@ -142,22 +136,81 @@ app.post('/admin/course/assign', isAuthenticated, async (req, res) => {
             }
           }
 
-          res.json({ "status": "success" });
+          res.status(200).json({ "status": "success" });
         }
-      }
-      else {
-        res.json({ "error": "Unauthorize access" });
       }
     }
     catch (err) {
       const jsonContent = {error: err.message, name: err.name}
-      res.json(jsonContent);
+      res.status(500).json(jsonContent);
+    }
+  }
+})
+
+//Teachers can fail or pass a student
+app.post('/teacher/student/result', isAuthenticated, async (req, res) => {
+
+  const studentID = req.body.studentID;
+  const teacherID = req.body.teacherID;
+  const courseID = req.body.courseID;
+  const result = req.body.result;
+
+  if (studentID == null || teacherID == null || courseID == null || result == null) {
+    res.status(400).json({ "error": "Invalid request" });
+  }
+  else if (isNaN(studentID)) {
+    res.status(400).json({ "error": "Invalid input for student ID" });
+  }
+  else if (isNaN(teacherID)) {
+    res.status(400).json({ "error": "Invalid input for teacher ID" });
+  }
+  else if (isNaN(courseID)) {
+    res.status(400).json({ "error": "Invalid input for course ID" });
+  }
+  else if (isNaN(result)) {
+    res.status(400).json({ "error": "Invalid input for result" });
+  }
+  else if (result > 1 || result < 0) {
+    res.status(400).json({ "error": "Only 0 or 1 allowed for result" });
+  }
+  else {
+
+    try {
+      let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID AND r.Role = ?'
+      const [userType, userColumn]  = await mainConnection.execute(sql, [teacherID, 'Teacher']);
+      if (userType.length == 0) {
+        res.status(400).json({ "error": "Invalid teacher ID" });
+      }
+      else{
+
+        let sql = 'SELECT title FROM courses WHERE TeacherID = ? AND CourseID = ?'
+        const [teacher, _]  = await mainConnection.execute(sql, [teacherID, courseID]);
+        if (teacher.length == 0) {
+          res.status(401).json({ "error": "Unauthorize access" });
+        }
+        else {
+          let sql = 'SELECT CourseID FROM enrolments WHERE CourseID = ? AND UserID = ?'
+          const [teacher, _]  = await mainConnection.execute(sql, [courseID, studentID]);
+          if (teacher.length == 0) {
+            res.status(400).json({ "error": "Student have not enrole for this course" });
+          }
+          else {
+
+            let sql = 'UPDATE enrolments SET Mark = ? WHERE CourseID = ? AND UserID = ?'
+            await mainConnection.execute(sql, [result, courseID, studentID]);
+            res.status(200).json({ "status": "success" });
+          }
+        }
+      }
+    }
+    catch (err) {
+      const jsonContent = {error: err.message, name: err.name}
+      res.status(500).json(jsonContent);
     }
   }
 })
 
 // Students can browse and list all the available courses and see the course title and course teacher’s name. 
-
 app.get('/courses', async (req, res) => {
   try {
     // Prepare SQL statement to get course information with teacher name
@@ -168,7 +221,7 @@ app.get('/courses', async (req, res) => {
         WHERE courses.isAvailable = 1 AND roles.Role = 'Teacher';
     `
     const [courses, _] = await mainConnection.execute(sql);
-    res.json(courses);
+    res.status(200).json(courses);
   } catch (err) {
     const jsonContent = {error: err.message, name: err.name};
     res.status(500).json(jsonContent);
