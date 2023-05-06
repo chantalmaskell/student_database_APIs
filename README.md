@@ -5,7 +5,7 @@
 Clone the project
 
 ```
-git clone git@gitlab.csc.liv.ac.uk:sganiros/csck542_grp_project.git
+git clone https://gitlab.csc.liv.ac.uk/sganiros/csck542_grp_project.git
 ```
 
 Install the Packages.
