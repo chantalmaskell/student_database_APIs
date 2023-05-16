@@ -44,7 +44,7 @@ router.post('/student/result', isAuthenticated, async (req, res) => {
         // Prepare SQL statement. Prevent SQL injection
         // Check user type is Teacher and authorized to access this API
         let sql = 'SELECT u.UserID, r.Role FROM users u, roles r WHERE u.userID = ? AND u.RoleID = r.RoleID AND r.Role = ?'
-        const [userType, userColumn]  = await mainConnection.execute(sql, [teacherID, 'Teacher']);
+        const [userType, _]  = await mainConnection.execute(sql, [teacherID, 'Teacher']);
         if (userType.length == 0) {
           res.status(400).json({ "error": "Invalid teacher ID" });
         }
