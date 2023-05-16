@@ -22,6 +22,9 @@ router.post('/student/result', isAuthenticated, async (req, res) => {
     if (studentID == null || teacherID == null || courseID == null || result == null) {
       res.status(400).json({ "error": "Invalid request" });
     }
+    else if (studentID == "" || teacherID == "" || courseID == "" || result == "") {
+      res.status(400).json({ "error": "Invalid request" });
+    }
     else if (isNaN(studentID)) {
       res.status(400).json({ "error": "Invalid input for student ID" });
     }

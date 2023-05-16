@@ -22,6 +22,9 @@ router.post('/course/availability', isAuthenticated, async (req, res) => {
     if (userID == null || course_isAvailable == null || courseID == null) {
       res.status(400).json({ "error": "Invalid request" });
     }
+    else if (userID == "" || course_isAvailable == "" || courseID == "") {
+      res.status(400).json({ "error": "Invalid request" });
+    }
     else if (isNaN(courseID)) {
       res.status(400).json({ "error": "Invalid input for course ID" });
     }
@@ -86,7 +89,10 @@ router.post('/course/assign', isAuthenticated, async (req, res) => {
     const mainConnection = GetDBConnection();
   
     // Input validation
-    if (userID == null || teacherID == null || courses == null) {
+    if (userID == null || teacherID == null) {
+      res.status(400).json({ "error": "Invalid request" });
+    }
+    else if (userID == "" || teacherID == "") {
       res.status(400).json({ "error": "Invalid request" });
     }
     else if (isNaN(userID)) {

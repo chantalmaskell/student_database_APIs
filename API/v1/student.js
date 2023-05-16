@@ -45,6 +45,9 @@ router.post('/enrol', isAuthenticated, async (req, res) => {
   if (studentID == null || courseID == null) {
     res.status(400).json({ "error": "Invalid request" });
   }
+  else if (studentID == "" || courseID == "") {
+    res.status(400).json({ "error": "Invalid request" });
+  }
   else if (isNaN(studentID)) {
     res.status(400).json({ "error": "Invalid input for student ID" });
   }
