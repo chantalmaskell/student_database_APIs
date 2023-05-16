@@ -28,8 +28,8 @@ router.post('/course/availability', isAuthenticated, async (req, res) => {
     else if (isNaN(course_isAvailable)) {
       res.status(400).json({ "error": "Invalid input for status" });
     }
-    else if (course_isAvailable > 1) {
-      res.status(400).json({ "error": "Invalid input for status" });
+    else if (course_isAvailable > 1 || course_isAvailable < 0) {
+      res.status(400).json({ "error": "Only 0 or 1 allowed for course status" });
     }
     else {
   
@@ -89,11 +89,14 @@ router.post('/course/assign', isAuthenticated, async (req, res) => {
     if (userID == null || teacherID == null || courses == null) {
       res.status(400).json({ "error": "Invalid request" });
     }
+    else if (isNaN(userID)) {
+      res.status(400).json({ "error": "Invalid admin ID" });
+    }
     else if (isNaN(teacherID)) {
       res.status(400).json({ "error": "Invalid input for teacher ID" });
     }
     else if (courses.length == 0) {
-      res.status(400).json({ "error": "Please select course/s  to assign to teacher" });
+      res.status(400).json({ "error": "Please select course/s  to assign to the teacher" });
     }
     else {
   
@@ -115,7 +118,7 @@ router.post('/course/assign', isAuthenticated, async (req, res) => {
           }
           else {
   
-            // Loop through the courses and assign to teacher
+            // Loop through the courses and assign to the teacher
             // This API allow multiple courses to be assigned to a teacher
             for (let i = 0; i < courses.length; i++) {
               let courseID = courses[i];
