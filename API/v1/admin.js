@@ -6,6 +6,7 @@ const router = express.Router()
 const { isAuthenticated } = require('../../auth/auth');
 
 const { GetDBConnection } = require('../../db');
+const e = require('express');
 
 //Admin course availability
 router.post('/course/availability', isAuthenticated, async (req, res) => {
@@ -42,20 +43,32 @@ router.post('/course/availability', isAuthenticated, async (req, res) => {
         }
         else {
   
-          // Check if course ID is valid
-          let sql = 'SELECT CourseID FROM courses WHERE CourseID = ?'
-          const [course, _]  = await mainConnection.execute(sql, [courseID]);
-          if (course.length == 0) {
+          // Check if course ID is valid and course has a teacher assigned
+          let sql = 'SELECT TeacherID FROM courses WHERE CourseID = ?'
+          const [teacher, _]  = await mainConnection.execute(sql, [courseID]);
+          if (teacher.length == 0) {
             res.status(400).json({ "error": "Invalid course ID" });
           }
           else {
+
+            var error = false;
+
+            // Check if teacher is assigned to the course if the course status changing to available
+            if (course_isAvailable == 1 && teacher[0].TeacherID == 0) {
+              error = true;
+            }
+
+            if (!error) {
+              // Update course availability
+              let sql = 'UPDATE courses SET isAvailable = ? WHERE CourseID = ?'
+              await mainConnection.execute(sql, [course_isAvailable, courseID]);
   
-            // Update course availability
-            let sql = 'UPDATE courses SET isAvailable = ? WHERE CourseID = ?'
-            await mainConnection.execute(sql, [course_isAvailable, courseID]);
-  
-            // Send success response
-            res.status(200).json({ "status": "success" });
+              // Send success response
+              res.status(200).json({ "status": "success" });
+            }
+            else {
+              res.status(400).json({ "error": "Please assign a teacher before making the course availabile for students" });
+            }
           }
         }
       }
