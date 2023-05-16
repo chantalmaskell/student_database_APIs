@@ -73,8 +73,8 @@ router.post('/enrol', isAuthenticated, async (req, res) => {
           
           // Check if student is already enrolled in the course
           let sql = 'SELECT UserID FROM enrolments WHERE UserID = ? AND CourseID = ?'
-          const [student, _]  = await mainConnection.execute(sql, [studentID, courseID]);
-          if (student.length > 0) {
+          const [enrolments, _]  = await mainConnection.execute(sql, [studentID, courseID]);
+          if (enrolments.length > 0) {
             res.status(400).json({ "error": "Student is already enrolled in the course" });
           }
           else {
