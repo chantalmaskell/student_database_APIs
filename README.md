@@ -68,3 +68,14 @@ Students can browse and list all the available courses and see the course title 
 ```
 GET 127.0.0.1:3000/api/v1/students/courses
 ```
+
+Students can enrol in a course. Students should not be able to enrol in a course more than once at each time. 
+
+```
+POST 127.0.0.1:3000/api/v1/students/enrol
+```
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `studentID` | `int` | **Student ID** |
+| `courseID` | `int` | **Course ID** |
